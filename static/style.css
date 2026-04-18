@@ -1,0 +1,31 @@
+/*
+  AI Resume Builder — ProResume
+  External stylesheet (served by Flask as /static/style.css)
+  All styles are already inlined in templates/index.html for portability.
+  This file exists for the Flask project structure requirement and
+  can be used to add custom overrides without editing the template.
+*/
+
+/* ── Custom overrides / additions below ── */
+
+/* Ensure uploads folder images render correctly in resume */
+.r-photo, .sig-img {
+  image-rendering: auto;
+}
+
+/* Print-specific tweaks when printing from the browser */
+@media print {
+  .chatbot-float,
+  .action-bar,
+  .left-panel,
+  .right-header {
+    display: none !important;
+  }
+  .right-panel {
+    width: 100% !important;
+  }
+  .resume-sheet {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}

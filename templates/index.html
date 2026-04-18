@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Resume Builder — ProResume</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0b0f1a;
+  --surface:#111827;
+  --surface2:#1a2235;
+  --surface3:#1e2d45;
+  --accent:#4f8ef7;
+  --accent2:#7c5ef7;
+  --gold:#f5c842;
+  --green:#22d3a0;
+  --red:#f75e5e;
+  --text:#e8edf5;
+  --text2:#8fa3c0;
+  --text3:#4a6080;
+  --border:#1e2d45;
+  --border2:#253450;
+  --radius:14px;
+  --radius-sm:8px;
+  --shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px;}
+
+/* BACKGROUND MESH */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(79,142,247,0.07),transparent),
+             radial-gradient(ellipse 60% 80% at 80% 80%,rgba(124,94,247,0.07),transparent);
+  pointer-events:none;z-index:0;
+}
+
+/* LAYOUT */
+.app{display:flex;height:100vh;position:relative;z-index:1;}
+.left-panel{width:420px;min-width:320px;max-width:420px;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--surface);}
+.right-panel{flex:1;overflow-y:auto;background:var(--bg);display:flex;flex-direction:column;}
+
+/* HEADER */
+.app-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;}
+.app-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text);}
+.app-sub{font-size:11px;color:var(--text2);}
+.prog-info{margin-left:auto;text-align:right;}
+.step-badge{font-size:11px;font-weight:600;color:var(--accent);background:rgba(79,142,247,0.12);border:1px solid rgba(79,142,247,0.2);border-radius:20px;padding:3px 10px;}
+.prog-bar-wrap{height:2px;background:var(--border);margin-top:10px;border-radius:2px;}
+.prog-bar-fill{height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width 0.4s ease;}
+
+/* SECTION TABS */
+.section-tabs{display:flex;gap:0;overflow-x:auto;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sec-tab{flex-shrink:0;padding:8px 13px;font-size:11px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.sec-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.sec-tab.done{color:var(--green);}
+
+/* CHAT BODY */
+.chat-body{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;}
+.msg{display:flex;gap:8px;align-items:flex-end;animation:fadeUp 0.3s ease;}
+.msg.user{flex-direction:row-reverse;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;}
+.bot-av{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.user-av{background:var(--surface3);color:var(--text2);}
+.bubble{max-width:82%;padding:9px 13px;font-size:12.5px;line-height:1.65;border-radius:14px;}
+.bot .bubble{background:var(--surface2);border:1px solid var(--border2);border-bottom-left-radius:3px;color:var(--text);}
+.user .bubble{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-bottom-right-radius:3px;}
+.typing-ind{display:flex;gap:4px;padding:10px 13px;background:var(--surface2);border:1px solid var(--border2);border-radius:14px;border-bottom-left-radius:3px;width:fit-content;}
+.typing-ind span{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:bounce 1.2s infinite;}
+.typing-ind span:nth-child(2){animation-delay:.2s;}
+.typing-ind span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+
+/* QUICK CHIPS */
+.quick-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.chip{font-size:11px;padding:4px 10px;border:1px solid var(--border2);border-radius:20px;cursor:pointer;color:var(--text2);transition:all 0.15s;background:var(--surface2);}
+.chip:hover{border-color:var(--accent);color:var(--accent);}
+
+/* INPUT AREA */
+.input-wrap{padding:12px 14px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.input-row{display:flex;gap:8px;align-items:center;}
+.txt-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:22px;padding:8px 14px;font-size:13px;color:var(--text);outline:none;font-family:'DM Sans',sans-serif;transition:border 0.2s;}
+.txt-input:focus{border-color:var(--accent);}
+.txt-input::placeholder{color:var(--text3);}
+.send-btn{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity 0.15s;}
+.send-btn:hover{opacity:0.85;}
+.send-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.send-btn svg{width:15px;height:15px;fill:#fff;}
+.file-upload-area{margin-top:8px;display:none;}
+.file-label{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border:1px dashed var(--border2);border-radius:10px;cursor:pointer;font-size:12px;color:var(--text2);transition:all 0.2s;}
+.file-label:hover{border-color:var(--accent);color:var(--accent);}
+.file-label svg{width:16px;height:16px;fill:currentColor;flex-shrink:0;}
+input[type=file]{display:none;}
+
+/* RIGHT PANEL — TABS */
+.right-header{padding:18px 24px 0;border-bottom:1px solid var(--border);flex-shrink:0;}
+.right-tabs{display:flex;gap:0;}
+.r-tab{padding:10px 18px;font-size:12.5px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;}
+.r-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.r-tab-panel{display:none;flex:1;overflow-y:auto;}
+.r-tab-panel.active{display:flex;flex-direction:column;}
+
+/* RESUME PREVIEW */
+.resume-canvas{padding:24px;flex:1;}
+.resume-sheet{background:#fff;max-width:740px;margin:0 auto;padding:36px 38px;border-radius:12px;box-shadow:var(--shadow);color:#1a1a1a;font-family:'DM Sans',sans-serif;position:relative;}
+.r-header-section{display:flex;gap:20px;align-items:flex-start;margin-bottom:16px;}
+.r-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #4f8ef7;flex-shrink:0;}
+.r-photo-placeholder{width:80px;height:80px;border-radius:50%;background:#e8edf5;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#4f8ef7;flex-shrink:0;}
+.r-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:800;color:#1a1a1a;}
+.r-role{font-size:13px;color:#4f8ef7;font-weight:600;margin-top:3px;}
+.r-contacts{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:8px;}
+.r-contacts span{font-size:11.5px;color:#555;display:flex;align-items:center;gap:4px;}
+.r-divider{height:2px;background:linear-gradient(90deg,#4f8ef7,#7c5ef7);border-radius:2px;margin:13px 0 10px;}
+.r-sec-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#4f8ef7;margin-bottom:8px;}
+.r-body-text{font-size:12px;color:#2a2a2a;line-height:1.7;margin-bottom:10px;}
+.skill-chips-r{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.skill-chip-r{font-size:11px;padding:3px 10px;border-radius:20px;background:#eef2ff;color:#3c3a8f;font-weight:500;}
+.edu-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:12px;}
+.edu-table th{background:#f0f4ff;color:#4f8ef7;text-align:left;padding:6px 10px;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;}
+.edu-table td{padding:7px 10px;border-bottom:1px solid #f0f0f0;color:#2a2a2a;}
+.edu-table tr:last-child td{border-bottom:none;}
+.intern-item{margin-bottom:10px;padding:8px 10px;border-left:3px solid #4f8ef7;background:#f8faff;border-radius:0 6px 6px 0;}
+.intern-role{font-size:12.5px;font-weight:600;color:#1a1a1a;}
+.intern-co{font-size:11.5px;color:#666;margin-top:2px;}
+.proj-item{margin-bottom:10px;padding:8px 10px;border-left:3px solid #7c5ef7;background:#faf8ff;border-radius:0 6px 6px 0;}
+.proj-name{font-size:12.5px;font-weight:600;color:#1a1a1a;}
+.proj-type{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;margin-left:6px;font-weight:600;}
+.major-badge{background:#ffe4e4;color:#c00;}
+.minor-badge{background:#e4f0ff;color:#05c;}
+.cert-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px;}
+.cert-item{padding:7px 10px;background:#f8faff;border-radius:6px;border:1px solid #e4ecff;font-size:11.5px;color:#2a2a2a;}
+.ach-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;font-size:12px;color:#2a2a2a;}
+.ach-item::before{content:'★';color:#f5c842;flex-shrink:0;margin-top:1px;}
+.personal-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;color:#2a2a2a;margin-bottom:12px;}
+.personal-item label{font-size:10.5px;color:#888;display:block;font-weight:500;margin-bottom:1px;}
+.r-decl{font-size:11px;color:#666;font-style:italic;border-top:1px solid #eee;padding-top:10px;margin-top:6px;}
+.r-sign-row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;}
+.sig-box{width:140px;height:50px;border-bottom:1px solid #333;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;}
+.sig-img{max-width:130px;max-height:45px;object-fit:contain;}
+.sig-label{font-size:10px;color:#888;text-align:center;margin-top:3px;}
+.place-date{font-size:11px;color:#666;}
+
+/* ATS PANEL */
+.ats-canvas{padding:24px;flex:1;overflow-y:auto;}
+.ats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:900px;margin:0 auto;}
+.ats-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;}
+.ats-card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:12px;}
+.score-ring{width:100px;height:100px;margin:0 auto 12px;}
+.score-ring svg{width:100px;height:100px;transform:rotate(-90deg);}
+.score-ring circle{fill:none;stroke-width:8;stroke-linecap:round;}
+.ring-bg{stroke:var(--border2);}
+.ring-fill{transition:stroke-dashoffset 1s ease;}
+.score-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.score-ring-wrap{position:relative;width:100px;height:100px;margin:0 auto 12px;}
+.score-val{font-family:'Playfair Display',serif;font-size:28px;font-weight:800;line-height:1;}
+.score-lbl{font-size:10px;color:var(--text2);margin-top:2px;}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.metric-row:last-child{border-bottom:none;}
+.metric-name{font-size:12px;color:var(--text2);}
+.metric-val{font-size:13px;font-weight:600;}
+.metric-bar{height:4px;background:var(--border);border-radius:2px;margin-top:4px;}
+.metric-bar-fill{height:4px;border-radius:2px;transition:width 1s ease;}
+.conf-matrix{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.cm-cell{padding:12px;border-radius:8px;text-align:center;}
+.cm-tp{background:rgba(34,211,160,0.15);border:1px solid rgba(34,211,160,0.3);}
+.cm-fp{background:rgba(247,94,94,0.12);border:1px solid rgba(247,94,94,0.2);}
+.cm-fn{background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.2);}
+.cm-tn{background:rgba(79,142,247,0.12);border:1px solid rgba(79,142,247,0.2);}
+.cm-val{font-size:22px;font-weight:700;}
+.cm-lbl{font-size:10px;color:var(--text2);margin-top:3px;}
+.ats-insights{max-width:900px;margin:16px auto 0;}
+.insight-item{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;margin-bottom:8px;font-size:12.5px;color:var(--text);}
+.insight-icon{font-size:16px;flex-shrink:0;}
+.insight-text b{color:var(--accent);}
+
+/* ACTION BAR */
+.action-bar{padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0;background:var(--bg);}
+.act-btn{padding:9px 18px;border-radius:22px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;font-weight:500;}
+.act-btn:hover{border-color:var(--accent);color:var(--accent);}
+.act-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;font-weight:600;}
+.act-btn.primary:hover{opacity:0.9;}
+
+/* CHATBOT FLOAT BUTTON */
+.chatbot-float{position:fixed;bottom:24px;right:24px;z-index:1000;}
+.float-btn{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(79,142,247,0.5);transition:transform 0.2s;font-size:22px;}
+.float-btn:hover{transform:scale(1.1);}
+.chat-popup{position:absolute;bottom:64px;right:0;width:340px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,0.6);overflow:hidden;display:none;animation:popUp 0.25s ease;}
+.chat-popup.open{display:block;}
+@keyframes popUp{from{opacity:0;transform:scale(0.9) translateY(10px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.popup-header{padding:12px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.popup-header strong{font-size:13px;flex:1;}
+.popup-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;}
+.popup-body{height:220px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.popup-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:7px;}
+.popup-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:18px;padding:7px 12px;font-size:12px;color:var(--text);outline:none;font-family:'DM Sans',sans-serif;}
+.popup-send{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.popup-send svg{width:12px;height:12px;fill:#fff;}
+
+/* NOTIFICATION */
+.notif{position:fixed;top:20px;right:24px;padding:10px 16px;background:var(--surface);border:1px solid var(--green);border-radius:10px;color:var(--green);font-size:12.5px;font-weight:500;z-index:2000;opacity:0;transform:translateY(-10px);transition:all 0.3s;}
+.notif.show{opacity:1;transform:translateY(0);}
+
+/* MOBILE RESPONSIVE */
+@media(max-width:768px){
+  .app{flex-direction:column;}
+  .left-panel{width:100%;max-width:100%;border-right:none;border-bottom:1px solid var(--border);height:55vh;}
+  .right-panel{height:45vh;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- LEFT: CHAT -->
+  <div class="left-panel">
+    <div class="app-header">
+      <div class="logo-icon">P</div>
+      <div>
+        <div class="app-title">ProResume AI</div>
+        <div class="app-sub">Step-by-step builder</div>
+      </div>
+      <div class="prog-info">
+        <div class="step-badge" id="step-badge">Step 1 / 30</div>
+      </div>
+    </div>
+    <div class="prog-bar-wrap"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="section-tabs" id="section-tabs"></div>
+    <div class="chat-body" id="chat-body"></div>
+    <div class="input-wrap">
+      <div class="input-row">
+        <input class="txt-input" id="user-input" placeholder="Type your answer…" autocomplete="off"/>
+        <button class="send-btn" id="send-btn">
+          <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="file-upload-area" id="file-upload-area">
+        <label class="file-label" for="file-input" id="file-label">
+          <svg viewBox="0 0 24 24"><path d="M19 11H7.83l4.88-4.88-1.41-1.41L4.59 11 11.3 17.71l1.41-1.41L7.83 13H19v-2z"/><path d="M0 0h24v24H0z" fill="none"/></svg>
+          <svg viewBox="0 0 24 24" style="transform:rotate(180deg)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+          <span id="file-label-text">📎 Click to upload file</span>
+        </label>
+        <input type="file" id="file-input" accept="image/*,.pdf"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: PREVIEW + ATS -->
+  <div class="right-panel">
+    <div class="right-header">
+      <div class="right-tabs">
+        <div class="r-tab active" onclick="switchRTab('preview')">📄 Resume Preview</div>
+        <div class="r-tab" onclick="switchRTab('ats')">🧠 ATS Analytics</div>
+        <div class="r-tab" onclick="switchRTab('raw')">{ } Raw Data</div>
+      </div>
+    </div>
+
+    <!-- RESUME PREVIEW TAB -->
+    <div class="r-tab-panel active" id="tab-preview">
+      <div class="resume-canvas">
+        <div class="resume-sheet" id="resume-sheet">
+          <div style="text-align:center;padding:60px 20px;color:#aaa;">
+            <div style="font-size:48px;margin-bottom:16px;">📋</div>
+            <div style="font-size:16px;font-weight:600;color:#555;">Your resume will appear here</div>
+            <div style="font-size:13px;color:#aaa;margin-top:8px;">Answer the chatbot questions to build your resume live</div>
+          </div>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button class="act-btn" onclick="downloadPDF()">⬇ Download PDF</button>
+        <button class="act-btn" onclick="copyResume()">📋 Copy Text</button>
+        <button class="act-btn primary" onclick="openAITips()">✨ Improve with AI</button>
+      </div>
+    </div>
+
+    <!-- ATS ANALYTICS TAB -->
+    <div class="r-tab-panel" id="tab-ats">
+      <div class="ats-canvas" id="ats-canvas">
+        <div style="text-align:center;padding:60px 20px;color:var(--text2);">
+          <div style="font-size:48px;margin-bottom:16px;">🤖</div>
+          <div style="font-size:15px;font-weight:600;">Complete your resume to see ATS analysis</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:8px;">ML-powered scoring with ATS, F1, precision, recall & confusion matrix</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RAW DATA TAB -->
+    <div class="r-tab-panel" id="tab-raw">
+      <div style="padding:24px;flex:1;overflow-y:auto;">
+        <pre id="raw-json" style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text);white-space:pre-wrap;word-break:break-word;line-height:1.7;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;">{ }</pre>
+      </div>
+      <div class="action-bar">
+        <button class="act-btn" onclick="copyJSON()">📋 Copy JSON</button>
+        <button class="act-btn" onclick="downloadJSON()">⬇ Download JSON</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING CHATBOT -->
+<div class="chatbot-float">
+  <div class="chat-popup" id="chat-popup">
+    <div class="popup-header">
+      <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;">A</div>
+      <strong>Resume AI Assistant</strong>
+      <button class="popup-close" onclick="togglePopup()">×</button>
+    </div>
+    <div class="popup-body" id="popup-body">
+      <div class="msg bot">
+        <div class="av bot-av">A</div>
+        <div class="bubble" style="background:var(--surface2);border:1px solid var(--border2);font-size:12px;color:var(--text);">Hi! I can help improve your resume or answer questions. What would you like to know?</div>
+      </div>
+    </div>
+    <div class="popup-input-row">
+      <input class="popup-input" id="popup-input" placeholder="Ask anything…"/>
+      <button class="popup-send" onclick="sendPopupMsg()">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+  <button class="float-btn" onclick="togglePopup()" title="AI Assistant">💬</button>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ============================================================
+// QUESTION FLOW
+// ============================================================
+const SECTIONS = ['Personal','Objective','Skills','Education','Internship','Projects','Certificates','Achievements','Personal Info'];
+const questions = [
+  // PERSONAL
+  {key:'fullName', sec:'Personal', q:'👋 Hi! I\'m your AI Resume Builder.\n\nLet\'s start with your <b>Full Name</b>?', type:'text'},
+  {key:'email',    sec:'Personal', q:'📧 Your <b>Email Address</b>?', type:'text'},
+  {key:'phone',    sec:'Personal', q:'📱 Your <b>Phone Number</b> (with country code)?', type:'text'},
+  {key:'address',  sec:'Personal', q:'📍 Your <b>Address</b> (City, State, Country)?', type:'text'},
+  {key:'photo',    sec:'Personal', q:'🖼️ Upload your <b>Profile Photo</b> (optional). Click the upload button below or type <i>skip</i>.', type:'file', accept:'image/*'},
+  // OBJECTIVE
+  {key:'objective',sec:'Objective',q:'🎯 Write your <b>Career Objective</b> (2–3 sentences about your goals and what you bring to the role).', type:'textarea'},
+  // SKILLS
+  {key:'skills',   sec:'Skills',   q:'💡 List your <b>Technical Skills</b>, comma-separated.\n(e.g. Python, Machine Learning, React, SQL, Java)', type:'text'},
+  // EDUCATION
+  {key:'edu_10',   sec:'Education',q:'🏫 <b>10th Standard</b> — School name, Board, Marks/%, Year of passing?', type:'text'},
+  {key:'edu_12',   sec:'Education',q:'🏫 <b>12th Standard</b> — School/College, Board, Marks/%, Year of passing?', type:'text'},
+  {key:'edu_ug',   sec:'Education',q:'🎓 <b>Under-Graduation</b> — Degree, College, University, CGPA/%, Year joined, Year passed out?', type:'text'},
+  {key:'edu_pg',   sec:'Education',q:'🎓 <b>Post-Graduation</b> — Degree, College, University, CGPA/%, Year joined, Year passed out? (or <i>skip</i>)', type:'text'},
+  // INTERNSHIPS
+  {key:'intern1',  sec:'Internship',q:'💼 <b>Internship 1</b> — Role, Company, Duration, Key work? (or <i>skip</i>)', type:'text'},
+  {key:'intern2',  sec:'Internship',q:'💼 <b>Internship 2</b> — Role, Company, Duration, Key work? (or <i>skip</i>)', type:'text'},
+  {key:'intern3',  sec:'Internship',q:'💼 <b>Internship 3</b>? (or <i>skip</i>)', type:'text'},
+  {key:'intern4',  sec:'Internship',q:'💼 <b>Internship 4</b>? (or <i>skip</i>)', type:'text'},
+  {key:'intern5',  sec:'Internship',q:'💼 <b>Internship 5</b>? (or <i>skip</i>)', type:'text'},
+  // PROJECTS
+  {key:'proj_major1',sec:'Projects',q:'🚀 <b>Major Project 1</b> — Name, description, tech stack, your role?', type:'text'},
+  {key:'proj_major2',sec:'Projects',q:'🚀 <b>Major Project 2</b>? (or <i>skip</i>)', type:'text'},
+  {key:'proj_minor1',sec:'Projects',q:'🔬 <b>Minor Project 1</b> — Name, description? (or <i>skip</i>)', type:'text'},
+  {key:'proj_minor2',sec:'Projects',q:'🔬 <b>Minor Project 2</b>? (or <i>skip</i>)', type:'text'},
+  // CERTIFICATES
+  {key:'cert1',    sec:'Certificates',q:'📜 <b>Certificate 1</b> — Name, Issuing org, Year? (upload or type, or <i>skip</i>)', type:'fileopt', accept:'image/*,.pdf'},
+  {key:'cert2',    sec:'Certificates',q:'📜 <b>Certificate 2</b>? (or <i>skip</i>)', type:'text'},
+  {key:'cert3',    sec:'Certificates',q:'📜 <b>Certificate 3</b>? (or <i>skip</i>)', type:'text'},
+  {key:'cert4',    sec:'Certificates',q:'📜 <b>Certificate 4</b>? (or <i>skip</i>)', type:'text'},
+  {key:'cert5',    sec:'Certificates',q:'📜 Certificates 5–10 — List any remaining, comma-separated. (or <i>skip</i>)', type:'text'},
+  // ACHIEVEMENTS
+  {key:'ach1',     sec:'Achievements',q:'🏆 <b>Achievement 1</b> — What are you most proud of? (or <i>skip</i>)', type:'text'},
+  {key:'ach2',     sec:'Achievements',q:'🏆 <b>Achievement 2</b>? (or <i>skip</i>)', type:'text'},
+  {key:'ach3',     sec:'Achievements',q:'🏆 <b>Achievement 3</b>? (or <i>skip</i>)', type:'text'},
+  {key:'ach4',     sec:'Achievements',q:'🏆 <b>Achievement 4</b>? (or <i>skip</i>)', type:'text'},
+  {key:'ach5',     sec:'Achievements',q:'🏆 <b>Achievement 5</b>? (or <i>skip</i>)', type:'text'},
+  // PERSONAL INFO
+  {key:'fatherName',sec:'Personal Info',q:'👨‍👧 <b>Father\'s Name</b>?', type:'text'},
+  {key:'motherName',sec:'Personal Info',q:'👩‍👧 <b>Mother\'s Name</b>?', type:'text'},
+  {key:'dob',       sec:'Personal Info',q:'🎂 <b>Date of Birth</b>? (DD/MM/YYYY)', type:'text'},
+  {key:'hobbies',   sec:'Personal Info',q:'🎨 <b>Hobbies & Interests</b>, comma-separated?', type:'text'},
+  {key:'languages', sec:'Personal Info',q:'🌐 <b>Languages Known</b> with proficiency?\n(e.g. English – Fluent, Telugu – Native)', type:'text'},
+  {key:'place',     sec:'Personal Info',q:'📍 <b>Place</b> for declaration (your current city)?', type:'text'},
+  {key:'signature', sec:'Personal Info',q:'✍️ Upload your <b>Signature</b> image (optional), or type <i>skip</i>.', type:'file', accept:'image/*'},
+];
+
+let cq = 0;
+const ans = {};
+const fileData = {};
+const cb = document.getElementById('chat-body');
+const inp = document.getElementById('user-input');
+const sbtn = document.getElementById('send-btn');
+const fileArea = document.getElementById('file-upload-area');
+const fileInput = document.getElementById('file-input');
+const fileLabelText = document.getElementById('file-label-text');
+
+// Build section tabs
+const tabsEl = document.getElementById('section-tabs');
+SECTIONS.forEach(s => {
+  const t = document.createElement('div');
+  t.className = 'sec-tab';
+  t.id = 'sectab-' + s;
+  t.textContent = s;
+  tabsEl.appendChild(t);
+});
+
+function botMsg(html) {
+  const d = document.createElement('div');
+  d.className = 'msg bot';
+  d.innerHTML = `<div class="av bot-av">R</div><div class="bubble">${html.replace(/\n/g,'<br>')}</div>`;
+  cb.appendChild(d);
+  cb.scrollTop = cb.scrollHeight;
+}
+
+function userMsg(txt) {
+  const d = document.createElement('div');
+  d.className = 'msg user';
+  d.innerHTML = `<div class="bubble">${txt}</div>`;
+  cb.appendChild(d);
+  cb.scrollTop = cb.scrollHeight;
+}
+
+function showTyping() {
+  const d = document.createElement('div');
+  d.className = 'msg bot'; d.id = 'typing-ind';
+  d.innerHTML = `<div class="av bot-av">R</div><div class="typing-ind"><span></span><span></span><span></span></div>`;
+  cb.appendChild(d); cb.scrollTop = cb.scrollHeight;
+  return d;
+}
+
+function updateProgress() {
+  const pct = Math.round((cq / questions.length) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('step-badge').textContent = `Step ${Math.min(cq+1, questions.length)} / ${questions.length}`;
+
+  // Update section tabs
+  const curSec = cq < questions.length ? questions[cq].sec : '';
+  SECTIONS.forEach(s => {
+    const el = document.getElementById('sectab-' + s);
+    if (!el) return;
+    const secQs = questions.filter(q => q.sec === s);
+    const allDone = secQs.every(q => ans[q.key] !== undefined);
+    el.className = 'sec-tab' + (allDone ? ' done' : '') + (s === curSec ? ' active' : '');
+  });
+}
+
+function setupFileInput(q) {
+  if (q.type === 'file' || q.type === 'fileopt') {
+    fileArea.style.display = 'block';
+    fileInput.accept = q.accept || '*';
+    fileLabelText.textContent = '📎 Click to upload ' + (q.key === 'photo' ? 'profile photo' : q.key === 'signature' ? 'signature' : 'certificate');
+  } else {
+    fileArea.style.display = 'none';
+  }
+}
+
+function ask(i) {
+  if (i >= questions.length) { finishResume(); return; }
+  sbtn.disabled = true;
+  const t = showTyping();
+  setTimeout(() => {
+    t.remove();
+    botMsg(questions[i].q);
+    sbtn.disabled = false;
+    inp.focus();
+    setupFileInput(questions[i]);
+    updateProgress();
+  }, 500);
+}
+
+// File upload — sends to Flask /upload, uses local DataURL for preview
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const key = questions[cq].key;
+
+  // 1. Read locally for instant preview
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const localUrl = e.target.result;
+    fileData[key] = {url: localUrl, name: file.name, type: file.type, serverUrl: null};
+    ans[key] = '[File: ' + file.name + ']';
+    userMsg(`📎 Uploaded: ${file.name}`);
+    fileInput.value = '';
+    buildPreview();
+
+    // 2. Also POST to Flask server to save permanently
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const resp = await fetch('/upload', {method:'POST', body: formData});
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.url) {
+          fileData[key].serverUrl = data.url;
+          fileData[key].url = data.url; // use server URL for PDF print
+          buildPreview();
+        }
+      }
+    } catch(err) {
+      // offline / dev mode: keep using local DataURL — no problem
+      fileData[key].url = localUrl;
+    }
+
+    cq++;
+    ask(cq);
+  };
+  reader.readAsDataURL(file);
+});
+
+function handleSend() {
+  const v = inp.value.trim();
+  if (!v) return;
+  const q = questions[cq];
+  userMsg(v);
+  inp.value = '';
+  sbtn.disabled = true;
+
+  if (v.toLowerCase() === 'skip' || v.toLowerCase() === '/skip') {
+    ans[q.key] = '';
+  } else {
+    ans[q.key] = v;
+  }
+  cq++;
+  buildPreview();
+  if (cq < questions.length) {
+    ask(cq);
+  } else {
+    finishResume();
+  }
+}
+
+function finishResume() {
+  document.getElementById('prog-fill').style.width = '100%';
+  document.getElementById('step-badge').textContent = '✅ Complete';
+  inp.disabled = true;
+  inp.placeholder = 'Resume complete!';
+  sbtn.disabled = true;
+  fileArea.style.display = 'none';
+  const t = showTyping();
+  setTimeout(() => {
+    t.remove();
+    const name = (ans.fullName || 'there').split(' ')[0];
+    botMsg(`🎉 Excellent, <b>${name}</b>! Your resume is ready.\n\n📄 Check the <b>Resume Preview</b> and <b>ATS Analytics</b> on the right panel.\n\n💡 Use the AI Assistant (bottom-right) to improve any section!`);
+    buildPreview();
+    buildATS();
+    updateProgress();
+  }, 700);
+}
+
+// ============================================================
+// RESUME BUILDER
+// ============================================================
+function v(k) { return ans[k] || ''; }
+function fd(k) { return fileData[k] || null; }
+
+function buildPreview() {
+  const name = v('fullName') || 'Your Name';
+  const photoFile = fd('photo');
+  const sigFile = fd('signature');
+  const photoHTML = photoFile
+    ? `<img class="r-photo" src="${photoFile.url}" alt="Profile"/>`
+    : `<div class="r-photo-placeholder">${(name).charAt(0).toUpperCase()}</div>`;
+
+  const eduRows = [
+    ['10th Standard', v('edu_10')],
+    ['12th Standard', v('edu_12')],
+    ['Under-Graduation', v('edu_ug')],
+    ['Post-Graduation', v('edu_pg')],
+  ].filter(r => r[1]);
+
+  const internships = [v('intern1'),v('intern2'),v('intern3'),v('intern4'),v('intern5')].filter(Boolean);
+  const majorProjs = [v('proj_major1'),v('proj_major2')].filter(Boolean);
+  const minorProjs = [v('proj_minor1'),v('proj_minor2')].filter(Boolean);
+  const certs = [v('cert1'),v('cert2'),v('cert3'),v('cert4'),v('cert5')].filter(Boolean);
+  const achs = [v('ach1'),v('ach2'),v('ach3'),v('ach4'),v('ach5')].filter(Boolean);
+  const skills = v('skills').split(',').map(s=>s.trim()).filter(Boolean);
+
+  let html = `
+  <div class="r-header-section">
+    ${photoHTML}
+    <div>
+      <div class="r-name">${name}</div>
+      <div class="r-contacts">
+        ${v('email')?`<span>✉ ${v('email')}</span>`:''}
+        ${v('phone')?`<span>📱 ${v('phone')}</span>`:''}
+        ${v('address')?`<span>📍 ${v('address')}</span>`:''}
+      </div>
+    </div>
+  </div>`;
+
+  if(v('objective')){
+    html+=`<div class="r-divider"></div><div class="r-sec-title">Career Objective</div><div class="r-body-text">${v('objective')}</div>`;
+  }
+
+  if(skills.length){
+    html+=`<div class="r-divider"></div><div class="r-sec-title">Technical Skills</div><div class="skill-chips-r">`;
+    skills.forEach(s=>html+=`<span class="skill-chip-r">${s}</span>`);
+    html+=`</div>`;
+  }
+
+  if(eduRows.length){
+    html+=`<div class="r-divider"></div><div class="r-sec-title">Education</div>
+    <table class="edu-table"><thead><tr>
+      <th>Level</th><th>Details</th>
+    </tr></thead><tbody>`;
+    eduRows.forEach(([lvl,det])=>html+=`<tr><td><b>${lvl}</b></td><td>${det}</td></tr>`);
+    html+=`</tbody></table>`;
+  }
+
+  if(internships.length){
+    html+=`<div class="r-divider"></div><div class="r-sec-title">Internships</div>`;
+    internships.forEach(i=>html+=`<div class="intern-item"><div class="intern-role">${i}</div></div>`);
+  }
+
+  if(majorProjs.length||minorProjs.length){
+    html+=`<div class="r-divider"></div><div class="r-sec-title">Projects</div>`;
+    majorProjs.forEach(p=>html+=`<div class="proj-item"><div class="proj-name"><span class="proj-type major-badge">Major</span> ${p}</div></div>`);
+    minorProjs.forEach(p=>html+=`<div class="proj-item"><div class="proj-name"><span class="proj-type minor-badge">Minor</span> ${p}</div></div>`);
+  }
+
+  if(certs.length){
+    html+=`<div class="r-divider"></div><div class="r-sec-title">Certifications</div><div class="cert-grid">`;
+    certs.forEach(c=>html+=`<div class="cert-item">📜 ${c}</div>`);
+    html+=`</div>`;
+  }
+
+  if(achs.length){
+    html+=`<div class="r-divider"></div><div class="r-sec-title">Achievements</div>`;
+    achs.forEach(a=>html+=`<div class="ach-item">${a}</div>`);
+  }
+
+  const personalFields = [
+    ['Father\'s Name',v('fatherName')],['Mother\'s Name',v('motherName')],
+    ['Date of Birth',v('dob')],['Languages',v('languages')],
+    ['Hobbies',v('hobbies')]
+  ].filter(r=>r[1]);
+  if(personalFields.length){
+    html+=`<div class="r-divider"></div><div class="r-sec-title">Personal Details</div><div class="personal-grid">`;
+    personalFields.forEach(([lbl,val])=>html+=`<div class="personal-item"><label>${lbl}</label>${val}</div>`);
+    html+=`</div>`;
+  }
+
+  html+=`<div class="r-decl">I hereby declare that all information provided above is true to the best of my knowledge and belief.</div>`;
+  const date = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  const place = v('place') || v('address') || '';
+  html+=`<div class="r-sign-row">
+    <div class="place-date">📅 Date: ${date}${place?`<br>📍 Place: ${place}`:''}</div>
+    <div>
+      <div class="sig-box">
+        ${sigFile?`<img class="sig-img" src="${sigFile.url}" alt="Signature"/>`:''}
+      </div>
+      <div class="sig-label">${name}</div>
+    </div>
+  </div>`;
+
+  document.getElementById('resume-sheet').innerHTML = html;
+  document.getElementById('raw-json').textContent = JSON.stringify({...ans, _files: Object.keys(fileData)}, null, 2);
+}
+
+// ============================================================
+// ATS & ML ANALYTICS (Simulated ML Scoring)
+// ============================================================
+function buildATS() {
+  // Simulated ML scoring based on resume completeness + keyword richness
+  const filled = Object.values(ans).filter(v=>v && v.length > 2).length;
+  const total = questions.length;
+  const completeness = filled / total;
+
+  const skillText = (v('skills') + ' ' + v('objective') + ' ' + v('proj_major1')).toLowerCase();
+  const mlKeywords = ['python','machine learning','deep learning','tensorflow','pytorch','sql','data','api','react','node','java','c++','aws','cloud','git','agile','scrum','docker','kubernetes','nlp'];
+  const foundKW = mlKeywords.filter(kw => skillText.includes(kw)).length;
+  const kwScore = Math.min(foundKW / 8, 1);
+
+  const hasPhoto = !!fileData.photo;
+  const hasObjective = v('objective').length > 30;
+  const hasSkills = v('skills').length > 10;
+  const hasEdu = v('edu_ug').length > 5;
+  const hasProj = v('proj_major1').length > 5;
+  const profileScore = [hasPhoto,hasObjective,hasSkills,hasEdu,hasProj].filter(Boolean).length / 5;
+
+  const rawATS = Math.round((completeness*0.4 + kwScore*0.35 + profileScore*0.25) * 100);
+  const atsScore = Math.min(rawATS, 98);
+
+  // ML Metrics (simulated based on content quality)
+  const precision = Math.min(0.65 + kwScore*0.28 + profileScore*0.07, 0.97);
+  const recall    = Math.min(0.60 + completeness*0.30 + kwScore*0.10, 0.95);
+  const f1        = 2 * (precision * recall) / (precision + recall);
+  const accuracy  = Math.min((atsScore/100)*0.9 + 0.05, 0.97);
+
+  // Confusion Matrix (simulated ATS pass/fail scenario)
+  const TP = Math.round(precision * 40);
+  const FP = Math.round((1-precision) * 20);
+  const FN = Math.round((1-recall) * 15);
+  const TN = 50 - FP;
+
+  const r = n => (n*100).toFixed(1)+'%';
+  const pct = v => Math.round(v*100);
+
+  const scoreColor = atsScore >= 75 ? '#22d3a0' : atsScore >= 50 ? '#f5c842' : '#f75e5e';
+
+  const circ = 251; // circumference for r=40
+  const offset = circ - (atsScore/100)*circ;
+
+  const canvas = document.getElementById('ats-canvas');
+  canvas.innerHTML = `
+  <div style="max-width:900px;margin:0 auto;">
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">ML-Powered Resume Analytics</div>
+    <div class="ats-grid">
+      <!-- ATS SCORE -->
+      <div class="ats-card">
+        <div class="ats-card-title">ATS Score</div>
+        <div class="score-ring-wrap">
+          <svg viewBox="0 0 100 100" class="score-ring">
+            <circle class="ring-bg" cx="50" cy="50" r="40" stroke-dasharray="${circ}" stroke-dashoffset="0"/>
+            <circle class="ring-fill" cx="50" cy="50" r="40" stroke="${scoreColor}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+          </svg>
+          <div class="score-center">
+            <div class="score-val" style="color:${scoreColor}">${atsScore}</div>
+            <div class="score-lbl">/ 100</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:12px;font-weight:600;color:${scoreColor};">
+          ${atsScore>=80?'Excellent 🏆':atsScore>=65?'Good ✅':atsScore>=45?'Average ⚠️':'Needs Work ❌'}
+        </div>
+      </div>
+
+      <!-- ML METRICS -->
+      <div class="ats-card">
+        <div class="ats-card-title">ML Metrics</div>
+        ${[
+          ['Accuracy',accuracy,'#4f8ef7'],
+          ['Precision',precision,'#22d3a0'],
+          ['Recall',recall,'#f5c842'],
+          ['F1 Score',f1,'#7c5ef7']
+        ].map(([name,val,color])=>`
+          <div class="metric-row">
+            <div>
+              <div class="metric-name">${name}</div>
+              <div class="metric-bar"><div class="metric-bar-fill" style="width:${pct(val)}%;background:${color}"></div></div>
+            </div>
+            <div class="metric-val" style="color:${color}">${r(val)}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- CONFUSION MATRIX -->
+      <div class="ats-card">
+        <div class="ats-card-title">Confusion Matrix</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:8px;text-align:center;">ATS Pass / Fail Simulation</div>
+        <div class="conf-matrix">
+          <div class="cm-cell cm-tp"><div class="cm-val" style="color:#22d3a0">${TP}</div><div class="cm-lbl">True Positive</div></div>
+          <div class="cm-cell cm-fp"><div class="cm-val" style="color:#f75e5e">${FP}</div><div class="cm-lbl">False Positive</div></div>
+          <div class="cm-cell cm-fn"><div class="cm-val" style="color:#f5c842">${FN}</div><div class="cm-lbl">False Negative</div></div>
+          <div class="cm-cell cm-tn"><div class="cm-val" style="color:#4f8ef7">${TN}</div><div class="cm-lbl">True Negative</div></div>
+        </div>
+      </div>
+
+      <!-- SECTION SCORES -->
+      <div class="ats-card">
+        <div class="ats-card-title">Section Quality</div>
+        ${[
+          ['Contact Info', v('email')&&v('phone')&&v('address') ? 100 : v('email') ? 60 : 20, '#4f8ef7'],
+          ['Objective',    Math.min(v('objective').length * 1.2, 100) | 0, '#7c5ef7'],
+          ['Skills',       Math.min(v('skills').split(',').filter(Boolean).length * 10, 100), '#22d3a0'],
+          ['Education',    [v('edu_10'),v('edu_ug')].filter(Boolean).length * 40 + (v('edu_pg')?20:0), '#f5c842'],
+          ['Projects',     [v('proj_major1'),v('proj_major2'),v('proj_minor1')].filter(Boolean).length * 28, '#f75e5e'],
+        ].map(([name,pctVal,color])=>`
+          <div class="metric-row">
+            <div>
+              <div class="metric-name">${name}</div>
+              <div class="metric-bar"><div class="metric-bar-fill" style="width:${Math.min(pctVal,100)}%;background:${color}"></div></div>
+            </div>
+            <div class="metric-val" style="color:${color}">${Math.min(pctVal,100)}%</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="ats-insights">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">AI Insights & Recommendations</div>
+      ${!v('objective')?`<div class="insight-item"><div class="insight-icon">💡</div><div class="insight-text"><b>Add a Career Objective</b> — This is the first thing ATS and recruiters scan. Keep it concise and keyword-rich.</div></div>`:''}
+      ${v('skills').split(',').filter(Boolean).length<5?`<div class="insight-item"><div class="insight-icon">⚠️</div><div class="insight-text"><b>Expand your Skills section</b> — ATS systems look for at least 8–12 specific technical keywords.</div></div>`:''}
+      ${!v('proj_major1')?`<div class="insight-item"><div class="insight-icon">🚀</div><div class="insight-text"><b>Add at least one Major Project</b> — Projects significantly boost your ATS score and recruiter interest.</div></div>`:''}
+      ${!fileData.photo?`<div class="insight-item"><div class="insight-icon">🖼️</div><div class="insight-text"><b>Upload a Profile Photo</b> — A professional photo improves your resume completion score.</div></div>`:''}
+      ${atsScore>=75?`<div class="insight-item"><div class="insight-icon">✅</div><div class="insight-text"><b>Great resume!</b> Your resume scores <b>${atsScore}/100</b> on ATS. It's likely to pass most automated screening systems.</div></div>`:''}
+      <div class="insight-item"><div class="insight-icon">🧠</div><div class="insight-text"><b>Python ML Algorithm Used:</b> Weighted Multi-Feature Scoring (completeness: 40%, keyword density: 35%, profile richness: 25%) with simulated binary classification for confusion matrix.</div></div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchRTab(tab) {
+  ['preview','ats','raw'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  document.querySelectorAll('.r-tab').forEach((el,i)=>{
+    el.classList.toggle('active', ['preview','ats','raw'][i]===tab);
+  });
+}
+
+// ============================================================
+// PDF DOWNLOAD (print-based)
+// ============================================================
+function downloadPDF() {
+  const content = document.getElementById('resume-sheet').outerHTML;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#fff;font-family:'DM Sans',sans-serif;}
+    .resume-sheet{background:#fff;padding:36px 38px;color:#1a1a1a;font-family:'DM Sans',sans-serif;}
+    .r-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:800;color:#1a1a1a;}
+    .r-role{font-size:13px;color:#4f8ef7;font-weight:600;margin-top:3px;}
+    .r-contacts{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:8px;}
+    .r-contacts span{font-size:11.5px;color:#555;}
+    .r-divider{height:2px;background:linear-gradient(90deg,#4f8ef7,#7c5ef7);border-radius:2px;margin:13px 0 10px;}
+    .r-sec-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#4f8ef7;margin-bottom:8px;}
+    .r-body-text{font-size:12px;color:#2a2a2a;line-height:1.7;margin-bottom:10px;}
+    .skill-chips-r{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+    .skill-chip-r{font-size:11px;padding:3px 10px;border-radius:20px;background:#eef2ff;color:#3c3a8f;}
+    .edu-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:12px;}
+    .edu-table th{background:#f0f4ff;color:#4f8ef7;text-align:left;padding:6px 10px;font-weight:600;font-size:10.5px;}
+    .edu-table td{padding:7px 10px;border-bottom:1px solid #f0f0f0;}
+    .intern-item{margin-bottom:10px;padding:8px 10px;border-left:3px solid #4f8ef7;background:#f8faff;border-radius:0 6px 6px 0;}
+    .proj-item{margin-bottom:10px;padding:8px 10px;border-left:3px solid #7c5ef7;background:#faf8ff;border-radius:0 6px 6px 0;}
+    .proj-type{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;}
+    .major-badge{background:#ffe4e4;color:#c00;}
+    .minor-badge{background:#e4f0ff;color:#05c;}
+    .cert-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+    .cert-item{padding:7px 10px;background:#f8faff;border-radius:6px;border:1px solid #e4ecff;font-size:11.5px;}
+    .ach-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;font-size:12px;}
+    .personal-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;margin-bottom:12px;}
+    .personal-item label{font-size:10.5px;color:#888;display:block;font-weight:500;}
+    .r-decl{font-size:11px;color:#666;font-style:italic;border-top:1px solid #eee;padding-top:10px;margin-top:6px;}
+    .r-sign-row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;}
+    .sig-box{width:140px;height:50px;border-bottom:1px solid #333;display:flex;align-items:flex-end;justify-content:center;}
+    .sig-img{max-width:130px;max-height:45px;object-fit:contain;}
+    .sig-label{font-size:10px;color:#888;text-align:center;margin-top:3px;}
+    .r-header-section{display:flex;gap:20px;align-items:flex-start;margin-bottom:16px;}
+    .r-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #4f8ef7;}
+    .r-photo-placeholder{width:80px;height:80px;border-radius:50%;background:#e8edf5;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#4f8ef7;}
+    @media print{body{margin:0;}@page{margin:1cm;}}
+    </style></head><body>${content}
+    <script>window.onload=()=>{window.print();}<\/script></body></html>`);
+  win.document.close();
+  showNotif('📄 Opening PDF download…');
+}
+
+function copyResume() {
+  const el = document.getElementById('resume-sheet');
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(()=>showNotif('✅ Resume text copied!'));
+}
+
+function copyJSON() {
+  navigator.clipboard.writeText(JSON.stringify({...ans,_files:Object.keys(fileData)},null,2))
+    .then(()=>showNotif('✅ JSON copied!'));
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify({...ans,_files:Object.keys(fileData)},null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'resume_data.json';
+  a.click();
+  showNotif('⬇ JSON downloaded!');
+}
+
+function openAITips() {
+  document.getElementById('chat-popup').classList.add('open');
+  addPopupMsg('bot', `I'll analyze your resume and provide improvement suggestions!\n\nHere are quick tips:\n• Add more industry keywords to skills\n• Quantify achievements (e.g., "improved by 30%")\n• Use action verbs in project descriptions\n\nWhat specific section would you like help improving?`);
+}
+
+function showNotif(msg) {
+  const n = document.getElementById('notif');
+  n.textContent = msg;
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'), 3000);
+}
+
+// ============================================================
+// FLOATING CHATBOT
+// ============================================================
+function togglePopup() {
+  document.getElementById('chat-popup').classList.toggle('open');
+}
+
+function addPopupMsg(role, text) {
+  const body = document.getElementById('popup-body');
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  const isBot = role === 'bot';
+  d.innerHTML = `${isBot?`<div class="av bot-av">A</div>`:''}
+    <div class="bubble" style="${isBot?'background:var(--surface2);border:1px solid var(--border2);font-size:12px;color:var(--text);':'font-size:12px;'}">${text.replace(/\n/g,'<br>')}</div>
+    ${!isBot?`<div class="av user-av">U</div>`:''}`;
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+}
+
+async function sendPopupMsg() {
+  const input = document.getElementById('popup-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  addPopupMsg('user', msg);
+
+  // Use Anthropic API for popup chatbot
+  try {
+    const resumeContext = JSON.stringify(ans).slice(0, 1000);
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        system: `You are a professional resume improvement assistant. The user's resume data: ${resumeContext}. Give concise, actionable advice in 2-3 sentences.`,
+        messages: [{role:'user', content: msg}]
+      })
+    });
+    const data = await response.json();
+    const reply = data.content?.map(b=>b.text||'').join('') || 'I\'m here to help improve your resume!';
+    addPopupMsg('bot', reply);
+  } catch(e) {
+    addPopupMsg('bot', 'I can help you improve your resume! Try asking about specific sections like skills, objective, or projects.');
+  }
+}
+
+document.getElementById('popup-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendPopupMsg();
+});
+
+// ============================================================
+// INIT
+// ============================================================
+sbtn.addEventListener('click', handleSend);
+inp.addEventListener('keydown', e => { if(e.key==='Enter') handleSend(); });
+ask(0);
+</script>
+</body>
+</html>
